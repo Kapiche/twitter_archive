@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block content %}
+<div class="row">
+    <div class="large-12 columns">
+        <h3 class="text-center">Hi {{ user.username }}.</h3>
+        <p class="text-center">You can manage your saved Twitter searches using the table below.</p>
+        <h3 class="text-center">Searches</h3>
+        {% if searches %}
+        <table style="margin: 10px auto;">
+            <thead>
+                <tr>
+                    <th>Search</th>
+                    <th>Tweets Collected</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for search in searches %}
+                <tr>
+                    <td>{{ search.query }}</td>
+                    <td>{{ search.collected|intcomma }} of {{ max_tweets|intcomma }}</td>
+                    <td><a href="{% url 'download_search' search.id %}" class="button tiny">Download</a> <a href="{% url 'delete_search' search.id %}" class="button tiny alert">Delete</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="text-center">You have <strong>{{ searches|length|intcomma }}</strong> of the <strong>{{ max_searches|intcomma }}</strong> saved searches allowed.</p>
+        {% else %}
+        <p class="text-center">No saved searches.</p>
+        {% endif %}
+        {% if searches|length < max_searches %}
+        <p class="text-center"><a href="{% url 'new_search' %}" class="button success">Add New Search</a></p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

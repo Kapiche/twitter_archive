@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+    <div class="large-12 columns text-center">
+        <h2>Sign-in With Twitter</h2>
+        <p>
+            This application uses your twitter account to use the Twitter REST API to collect tweets based on your
+            queries. To accomplish this, you need to authorize this application to collect tweets on your behalf. You
+            can do that by using the below button.
+        </p>
+        <p><a href="{{ twitter_url }}" class="button">Sign in with Twitter</a></p>
+    </div>
+</div>
+{% endblock %}

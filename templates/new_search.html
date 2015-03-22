@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+    <div class="small-12 columns">
+        <h2>Add New Search</h2>
+    </div>
+</div>
+<form action="{% url 'new_search' %}" method="POST">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="row">
+        <div class="small-12 columns">
+            <div data-alert class="alert-box alert">
+                {{ form.non_field_errors }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% for field in form %}
+    <div class="row">
+        <div class="small-12 columns">
+            {% if field.errors %}
+            <div data-alert class="alert-box alert">
+                {{ field.errors }}
+            </div>
+            {% endif %}
+            {{ field.label_tag }} {{ field }}
+        </div>
+    </div>
+    {% endfor %}
+    <div class="row">
+        <div class="small-12 columns text-center">
+            <input type="submit" class="button" value="Submit" />
+        </div>
+    </div>
+</form>
+{% endblock %}
+
