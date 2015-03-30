@@ -15,12 +15,16 @@ from twython import Twython
 from twitter_archive import creds, tasks
 from twitter_archive.forms import SearchForm
 from twitter_archive.models import TwitterProfile, TwitterSearch
+from twitter_archive.tasks import collect_tweets
 
 
 def twitter_login(request):
     if request.method == 'GET':
         twitter = Twython(creds.APP_KEY, creds.APP_SECRET)
-        auth = twitter.get_authentication_tokens(callback_url='http://127.0.0.1:8000/callback')
+        if settings.DEBUG:
+            auth = twitter.get_authentication_tokens(callback_url='http://127.0.0.1:8000/callback')
+        else:
+            auth = twitter.get_authentication_tokens(callback_url='http://203.101.227.25/callback')
         request.session['oauth_token'] = auth['oauth_token']
         request.session['oauth_token_secret'] = auth['oauth_token_secret']
 
@@ -31,13 +35,8 @@ def account(request):
     if not request.user.is_authenticated():
         return HttpResponseForbidden()
     if request.method == 'GET':
-        twitter = Twython(
-            creds.APP_KEY,
-            creds.APP_SECRET,
-            request.user.twitterprofile.oauth_token,
-            request.user.twitterprofile.oauth_secret
-        )
-        tasks.collect_tweets()
+        if settings.DEBUG:
+            collect_tweets()
         return render(request, 'account.html', {
             'searches': TwitterSearch.objects.filter(user=request.user),
             'max_tweets': settings.MAX_TWEETS,
@@ -51,7 +50,7 @@ def callback(request):
         twitter = Twython(
             creds.APP_KEY,
             creds.APP_SECRET,
-            request.session['oauth_token'],
+            request.GET['oauth_token'],
             request.session['oauth_token_secret']
         )
         final_step = twitter.get_authorized_tokens(oauth_verifier)
@@ -59,9 +58,13 @@ def callback(request):
         request.session['oauth_token_secret'] = final_step['oauth_token_secret']
 
         try:
-            User.objects.get(username=final_step['screen_name'])
+            user = User.objects.get(username=final_step['screen_name'])
+            profile = user.twitterprofile
+            profile.oauth_token = final_step['oauth_token']
+            profile.oauth_secret = final_step['oauth_token_secret']
+            profile.save()
         except ObjectDoesNotExist:
-            user = User.objects.create_user(final_step['screen_name'], "this@is.crap", final_step['oauth_token_secret'])
+            user = User.objects.create_user(final_step['screen_name'], "this@is.crap", 'the_password')
             profile = TwitterProfile()
             profile.user = user
             profile.oauth_token = final_step['oauth_token']
@@ -70,7 +73,7 @@ def callback(request):
         finally:
             user = authenticate(
                 username=final_step['screen_name'],
-                password=final_step['oauth_token_secret']
+                password='the_password'
             )
             login(request, user)
 

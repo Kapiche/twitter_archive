@@ -1,0 +1,48 @@
+# database container
+data:
+  image: base/arch
+  volumes:
+    - /var/csvs
+  command: true
+db:
+  image: postgres:9.4
+  environment:
+    - POSTGRES_PASSWORD=dangu5
+# AMQP server for jon processing
+rabbitmq:
+    image: tutum/rabbitmq
+    environment:
+        - RABBITMQ_PASS=dangu5
+    ports:
+        - "5672:5672"  # we forward this port because it's useful for debugging
+# Django App
+web:
+    image: kapiche/twitter_archive
+    working_dir: /home/docker/code/
+    command: ./run_web.sh
+    ports:
+        - "80:80"
+    links:
+        - rabbitmq:rabbit
+        - db:db
+    volumes_from:
+        - data
+# Celery beat (scheduled tasks)
+worker:
+    image: kapiche/twitter_archive
+    working_dir: /home/docker/code/
+    command: celery -A twitter_archive worker -l info
+    links:
+        - rabbitmq:rabbit
+        - db:db
+    volumes_from:
+        - data
+beat:
+    image: kapiche/twitter_archive
+    working_dir: /home/docker/code/
+    command: celery -A twitter_archive beat -l info
+    links:
+        - rabbitmq:rabbit
+        - db:db
+    volumes_from:
+        - data
